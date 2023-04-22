@@ -25,60 +25,67 @@ class paquete:
         self.nombre = nombre        
         self.unidades = unidades
 
-def rec_sobornos(dict_con_nombre_productos, soborno, cantidad_a_dejar):
+def mayor_es_menor_que_soborno(dict_con_nombre_productos,soborno,incautado,incautado_total):
+    if soborno.nombre not in incautado:
+            incautado[soborno.nombre] = []    
+    primer_unidad = dict_con_nombre_productos[soborno.nombre][0]   
+    incautado[soborno.nombre].append(primer_unidad)
+    incautado_total += primer_unidad
+    dict_con_nombre_productos[soborno.nombre].pop(0)
+    return rec_sobornos(dict_con_nombre_productos, soborno,incautado,incautado_total) # 
+
+
+def rec_sobornos(dict_con_nombre_productos, soborno, incautado,incautado_total = 0):
     print(dict_con_nombre_productos)
     print(f" \nsoborno: {soborno.unidades}; {soborno.nombre}\n")
-    print(f"soborno devuelto : {cantidad_a_dejar}")
-    cantidad = 0
-    if soborno.nombre in cantidad_a_dejar:
-        cantidad = sum(cantidad_a_dejar[soborno.nombre])
-    if dict_con_nombre_productos[soborno.nombre][0] + cantidad < soborno.unidades: 
-        if soborno.nombre not in cantidad_a_dejar:
-            cantidad_a_dejar[soborno.nombre] = []    
-        primer_unidad = dict_con_nombre_productos[soborno.nombre][0]   
-        cantidad_a_dejar[soborno.nombre].append(primer_unidad)
-        dict_con_nombre_productos[soborno.nombre].pop(0)
-        return rec_sobornos(dict_con_nombre_productos, soborno,cantidad_a_dejar )# -> #producto = [9, 7, 5,4,3, 1]
-    unidad_max = 0
-    soborno_contrajado = 0
-    if soborno.nombre in cantidad_a_dejar:
-        soborno_contrajado = sum(cantidad_a_dejar[soborno.nombre])
-    for unidades in dict_con_nombre_productos[soborno.nombre]:  #(cigarrillos) -> [9,7,5,4,3,1] 
-        if soborno.unidades <= unidades + soborno_contrajado:     
-            unidad_max = unidades ## unidades_max = 2
-        if soborno.unidades > unidades + soborno_contrajado:
-            break
-    if soborno.nombre not in cantidad_a_dejar:
-        cantidad_a_dejar[soborno.nombre] = []
-    cantidad_a_dejar[soborno.nombre].append(unidad_max)
-    return cantidad_a_dejar
+    print(f"soborno devuelto : {incautado}")
+    if dict_con_nombre_productos[soborno.nombre][0] + incautado_total < soborno.unidades:    ##Caso el mayor de la lista es menor al soborno
+        return mayor_es_menor_que_soborno(dict_con_nombre_productos,soborno,incautado,incautado_total) 
+    # unidad_max = 0
+    # for unidades in dict_con_nombre_productos[soborno.nombre]:  #O(n) Igualmente se puede mejorar haciendo una busqueda binaria, mejorando a un O(log n)!!
+    #     if soborno.unidades <= unidades + incautado_total:     
+    #         unidad_max = unidades
+    #     if soborno.unidades > unidades + incautado_total:
+    #         break
+    units = dict_con_nombre_productos[soborno.nombre]   #Busqueda binaria (O(log n) siendo n la cantidad de unidades de cada producto
+    inicio = 0
+    fin = len(units) - 1
+    while inicio <= fin:
+        medio = (inicio + fin) // 2
+        if soborno.unidades <= units[medio] + incautado_total:
+            fin = medio - 1
+        else:
+            inicio = medio + 1
+    unidad_max = units[fin]
+    if soborno.nombre not in incautado:
+        incautado[soborno.nombre] = []
+    incautado[soborno.nombre].append(unidad_max) ## O(1)
+    incautado_total += unidad_max
+    return incautado
 
-def alg_greedy(productos,sobornos):     ##  paquetes cigarrillos de 3 y 9 y 15 unidades, soborno 6 -> paquete de 9 unidades
+def alg_greedy(productos,sobornos): 
     dict_con_nombre_productos = {}
-    productos.sort(key=lambda x: x.unidades, reverse=True)  # O(n logn)
-    for producto in productos:   #O(n)
-        if producto.nombre not in dict_con_nombre_productos: 
-            dict_con_nombre_productos[producto.nombre] = []
-        dict_con_nombre_productos[producto.nombre].append(producto.unidades)
-    soborno_devuelto = {}
-    for soborno in sobornos:
-        rec_sobornos(dict_con_nombre_productos, soborno, soborno_devuelto) ## -> productos = {cigarrillos: [15, 9, 3], coca: [15, 7, 5, 3, 1]}
-    return soborno_devuelto                                                ## soborno = paquete("cigarrillos", 6)
-                                                                            ## soborno devuelto = {}
-
-
+    for producto in productos: # O(n * k) n = cantidad de productos    Siempre la cantidad de sobornos es menor que la cantidad de productos
+        for soborno in sobornos:  # O(k) k = cantidad de sobornos
+            if producto.nombre == soborno.nombre:
+                if producto.nombre not in dict_con_nombre_productos: 
+                    dict_con_nombre_productos[producto.nombre] = []
+                dict_con_nombre_productos[producto.nombre].append(producto.unidades)  #O(1)
+                break
+    for nombre in dict_con_nombre_productos:
+        dict_con_nombre_productos[nombre].sort(reverse=True) ## O(k log n) siendo k la cantidad de sobornos y n la cantidad de cada tipo
+    incautado = {}
+    for soborno in sobornos: # (O(k) k = cantidad de sobornos)
+        rec_sobornos(dict_con_nombre_productos, soborno, incautado) #O(n)
+    return incautado                                                # O(n * k) + O(k log n) + O(k*n) = O(n * k) + O(k log n)
 productos = []
 for i in range(10):
     productos.append(paquete("coca", random.randint(1, 15)))
-for i in range(15):
-    productos.append(paquete("vodka", random.randint(1, 20)))
-for i in range(5):
-    productos.append(paquete("sprite", random.randint(1, 15)))
 
-unidades = [11, 9, 7, 5,4, 2] ## soborno = 14 cigarrillos  -> deberia dar 7+5+2 -> 11+4
+unidades = [11, 9, 7, 5,4, 2] # soborno = 14 cigarrillos  -> deberia dar 7+5+2 -> 11+4
 
 for unidad in unidades:
     productos.append(paquete("cigarrillos", unidad))
 
-incautado = alg_greedy(productos, [paquete("cigarrillos", 8),paquete("coca",20)])
+incautado = alg_greedy(productos, [paquete("cigarrillos", 26), paquete("coca", 18)])
 print(f"lo incautado es {incautado}")

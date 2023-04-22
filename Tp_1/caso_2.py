@@ -46,7 +46,7 @@ def rec_sobornos(dict_con_nombre_productos, soborno, incautado,incautado_total =
     #     if soborno.unidades <= unidades + incautado_total:     
     #         unidad_max = unidades
     #     if soborno.unidades > unidades + incautado_total:
-    #         break
+    #         break 
     units = dict_con_nombre_productos[soborno.nombre]   #Busqueda binaria (O(log n) siendo n la cantidad de unidades de cada producto
     inicio = 0
     fin = len(units) - 1

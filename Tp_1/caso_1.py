@@ -1,10 +1,3 @@
-
-import random
-import datetime
-# from k_merge_heap import *
-import heapq
-import matplotlib.pyplot as plt
-
 # El problema de K-merge es el siguiente: se tienen K arreglos ordenados, y se quiere quiere obtener un único arreglo, también
 # ordenado, con todos los elementos de los arreglos originales (inclusive si hay repetidos). Por simplicidad para los diferentes
 # análisis se puede suponer que todos los arreglos tienen exactamente h elementos (por ende, la cantidad total de elementos es
@@ -18,7 +11,13 @@ import matplotlib.pyplot as plt
 # recursivamente para cada mitad de arreglos. Es decir, si tenemos cuatro arreglos, invocamos para los primeros 2, y
 # luego para los segundos 2. Al terminar los llamados recursivos, tenemos dos arreglos ordenados. Estos deberán ser
 # intercalados ordenadamente, tal cual se realiza en mergesort.
-
+import random
+import datetime
+# from k_merge_heap import *
+import heapq
+import matplotlib.pyplot as plt
+import numpy as np
+import math
 
 def k_merge(lista_arreglos):
     if len(lista_arreglos) == 1:
@@ -34,7 +33,6 @@ def k_merge(lista_arreglos):
     return merge(izq,der) # O(K*h)) -> n^C
 
 
-
 def merge(left, right):
     res = []
     while left and right: 
@@ -45,28 +43,6 @@ def merge(left, right):
     res = res + left + right
                            
     return res
-
-
-# a = [[1,3,5],[4,5,6],[5,8,9],[8,9,10],[1,3,5],[4,5,6],[5,8,9],[8,9,10]]
-# print(k_merge(a))
-
-
-def generarArregloConHElementos(h):
-    arr = []
-    for i in range(h):
-        arr.append(random.randint(1, 300))
-    arr.sort()
-    return arr
-
-class Pruebas:
-    def probarMuchosElementosPocosArreglos(self, k, func,h = 100):
-
-        array = [generarArregloConHElementos(h) for i in range(k)]
-        start_time = datetime.datetime.now()
-        func(array)
-        end = datetime.datetime.now()
-        elapsedTime = end - start_time;
-        print(f"Tiempo de ejecucion funcion {func} con {k} arreglos y {h} elementos en cada uno : {elapsedTime.total_seconds()} segundos")
 
 def k_merge_catedra(lista_elementos):
     heap = []
@@ -81,23 +57,60 @@ def k_merge_catedra(lista_elementos):
             nueva_posicion = indice_numero + 1
             heapq.heappush(heap,(lista_elementos[indice_arreglo][nueva_posicion],indice_arreglo,nueva_posicion))
     return res
+def generarArregloConHElementos(h):
+    arr = []
+    for i in range(h):
+        arr.append(random.randint(1, 300))
+    arr.sort()
+    return arr
 
-pruebas = Pruebas()
-ks = [50, 100, 150, 200, 250, 300] 
-times = [] 
-for k in ks:
-    for i in range(1):
-        if i == 0:
-            time = pruebas.probarMuchosElementosPocosArreglos(k, k_merge)
-        else:
-            time = pruebas.probarMuchosElementosPocosArreglos(k, k_merge_catedra)
-        times.append(time)
-plt.plot(ks, times)
-plt.xlabel('Cantidad de arreglos')
+def generarKArreglosConHElementosDiferentes(K,h0):
+    arrays = []
+    r = 1.05
+    h = h0
+    for i in range(K):
+        h = math.ceil(h * r)
+        arr = np.random.randint(1, 101, size=h)
+        arrays.append(arr)
+    return arrays
+
+class Pruebas:
+    def probarKArreglosConHElementos(self, k, func,h = 100):
+
+        array = [generarArregloConHElementos(h) for i in range(k)]
+        start_time = datetime.datetime.now()
+        func(array)
+        end = datetime.datetime.now()
+        elapsedTime = end - start_time;
+        return elapsedTime.total_seconds()
+
+    def probarKArreglosConDistintosHElementos(self,k,func,h_inicial = 50):
+        array = generarKArreglosConHElementosDiferentes(k,h_inicial)
+        start_time = datetime.datetime.now()
+        func(array)
+        end = datetime.datetime.now()
+        elapsedTime = end - start_time;
+        return elapsedTime.total_seconds()
+
+def probarFunc(func,func_generacion_arreglos,ks = [100]):
+  times = [] 
+  for arreglos in ks:
+      time = func_generacion_arreglos(arreglos, func)
+      times.append(time)
+
+  return ks, times
+
+
+plt.xlabel('Cantidad de  por arreglo')
 plt.ylabel('Tiempo de ejecucion (segundos)')
-plt.title('Tiempo de ejecucion vs Cantidad de arreglos')
-plt.show()
+plt.title('Tiempo de ejecucion vs Cantidad de elementos por arreglo')
+pruebas = Pruebas()
+#ks1, times1 = probarFunc(k_merge,pruebas.probarKArreglosConDistintosHElementos)
 
+ks2, times2 = probarFunc(k_merge_catedra,pruebas.probarKArreglosConDistintosHElementos)
 
+# plt.plot(ks1, times1, color='blue', label='k_merge')
+plt.plot(ks2, times2, color='red', label='k_merge_catedra')
 
-
+plt.legend()
+plt.show() 
